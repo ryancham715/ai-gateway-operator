@@ -98,7 +98,7 @@ import (
 // +kubebuilder:rbac:groups=extensions.kuadrant.io,resources=telemetrypolicies,verbs=create;delete;get;list;patch;watch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes/finalizers,verbs=update
-// +kubebuilder:rbac:groups=inference.opendatahub.io,resources=externalmodels;externalproviders,verbs=create;get;list;update;watch
+// +kubebuilder:rbac:groups=inference.opendatahub.io,resources=externalmodels;externalproviders,verbs=create;delete;get;list;patch;update;watch
 // +kubebuilder:rbac:groups=inference.opendatahub.io,resources=externalmodels/status;externalproviders/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=inference.opendatahub.io,resources=externalmodels/finalizers;externalproviders/finalizers,verbs=update
 // +kubebuilder:rbac:groups=kuadrant.io,resources=authpolicies;tokenratelimitpolicies,verbs=create;delete;get;list;patch;update;watch
@@ -139,6 +139,7 @@ func NewReconciler(
 		Owns(&apiextensionsv1.CustomResourceDefinition{}).
 		Owns(&appsv1.Deployment{}, reconciler.WithPredicates(predicates.DefaultDeploymentPredicate)).
 		WithAction(m.initialize).
+		WithAction(m.ensureInfraSecretMigrationRBAC).
 		WithAction(m.upgradeIfNeeded).
 		WithAction(releases.NewAction(
 			releases.WithMetadataFilePath(func(rr *odhtypes.ReconciliationRequest) string {
