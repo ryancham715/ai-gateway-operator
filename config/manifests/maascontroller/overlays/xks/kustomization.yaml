@@ -6,6 +6,7 @@ resources:
   - ../../rbac
   - ../../manager
   - ../../webhook
+  - cert-manager/
   # monitoring is excluded on xKS (OpenShift-specific ServiceMonitor/PodMonitor)
 
 labels:
@@ -55,11 +56,46 @@ patches:
       - op: remove
         path: /metadata/annotations/service.beta.openshift.io~1inject-cabundle
 
-  # Remove OCP CA bundle injection annotation
+  # Replace OCP CA injection with cert-manager CA injection on webhook
   - target:
       kind: ValidatingWebhookConfiguration
       name: maas-validating-webhook-configuration
     patch: |
       - op: remove
         path: /metadata/annotations/service.beta.openshift.io~1inject-cabundle
+      - op: add
+        path: /metadata/annotations/cert-manager.io~1inject-ca-from
+        value: "$(NAMESPACE)/maas-controller-webhook-server"
 
+vars:
+  - name: NAMESPACE
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: maas-parameters
+    fieldref:
+      fieldpath: data.NAMESPACE
+  - name: ISSUER_REF_NAME
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: maas-parameters
+    fieldref:
+      fieldpath: data.ISSUER_REF_NAME
+  - name: ISSUER_REF_KIND
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: maas-parameters
+    fieldref:
+      fieldpath: data.ISSUER_REF_KIND
+  - name: ISSUER_REF_GROUP
+    objref:
+      apiVersion: v1
+      kind: ConfigMap
+      name: maas-parameters
+    fieldref:
+      fieldpath: data.ISSUER_REF_GROUP
+
+configurations:
+  - params.yaml
