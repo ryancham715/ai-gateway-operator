@@ -98,6 +98,7 @@ import (
 // +kubebuilder:rbac:groups=components.platform.opendatahub.io,resources=modelsasservices/status,verbs=get;patch;update
 // +kubebuilder:rbac:groups=config.openshift.io,resources=authentications,verbs=get;list;watch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=create;delete;get;list;patch;update;watch
+// +kubebuilder:rbac:groups=discovery.k8s.io,resources=endpointslices,verbs=list;watch
 // +kubebuilder:rbac:groups=extensions.kuadrant.io,resources=telemetrypolicies,verbs=create;delete;get;list;patch;watch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes/finalizers,verbs=update
@@ -131,7 +132,7 @@ func NewReconciler(
 		return err
 	}
 
-	builder := reconciler.ReconcilerFor(mgr, &componentApi.AIGateway{}).
+	r, err := reconciler.ReconcilerFor(mgr, &componentApi.AIGateway{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.ClusterRole{}).
@@ -141,14 +142,7 @@ func NewReconciler(
 		Owns(&corev1.Service{}).
 		Owns(&apiextensionsv1.CustomResourceDefinition{}).
 		Owns(&admissionregistrationv1.ValidatingWebhookConfiguration{}).
-		Owns(&appsv1.Deployment{}, reconciler.WithPredicates(predicates.DefaultDeploymentPredicate))
-
-	r, err := builder.
-		Watches(
-			&apiextensionsv1.CustomResourceDefinition{},
-			reconciler.WithEventMapper(watchDefaultAIGateway),
-			reconciler.WithPredicates(maasCRDWatchPredicate()),
-		).
+		Owns(&appsv1.Deployment{}, reconciler.WithPredicates(predicates.DefaultDeploymentPredicate)).
 		WithAction(m.initialize).
 		WithAction(m.ensureInfraSecretMigrationRBAC).
 		WithAction(m.upgradeIfNeeded).
@@ -166,7 +160,6 @@ func NewReconciler(
 			deploy.WithCache(),
 			deploy.WithApplyOrder(),
 		)).
-		WithAction(m.cleanupCRD).
 		WithAction(deployments.NewAction()).
 		WithAction(m.overWriteCondition).
 		WithAction(m.reportStatus).
