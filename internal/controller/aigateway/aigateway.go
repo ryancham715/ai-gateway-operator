@@ -112,10 +112,15 @@ func NewModule(cfg *moduleconfig.Config) (*Module, error) {
 		return nil, fmt.Errorf("failed to update images on path %s: %w", batchMI, err)
 	}
 
+	maasSourcePath := "base"
+	if cfg.PlatformType == string(cluster.XKS) {
+		maasSourcePath = "overlays/xks"
+	}
+
 	maasMI := odhtypes.ManifestInfo{
 		Path:       cfg.ManifestsPath,
 		ContextDir: "maascontroller",
-		SourcePath: "base",
+		SourcePath: maasSourcePath,
 	}
 
 	if err := odhdeploy.ApplyParams(maasMI.String(), "params.env", maasImageParamMap, nil); err != nil {

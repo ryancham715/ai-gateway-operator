@@ -43,6 +43,7 @@ import (
 	moduleconfig "github.com/opendatahub-io/ai-gateway-operator/pkg/config"
 	"github.com/opendatahub-io/ai-gateway-operator/pkg/controller/status"
 	"github.com/opendatahub-io/ai-gateway-operator/pkg/version"
+	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/cluster"
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/conditions"
 	odhtypes "github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/types"
 	odhAnnotations "github.com/opendatahub-io/opendatahub-operator/v2/pkg/metadata/annotations"
@@ -129,6 +130,22 @@ func TestNewModule(t *testing.T) {
 	g.Expect(m.batchGatewayManifestInfo.SourcePath).To(Equal("base"))
 	g.Expect(m.maasManifestInfo.ContextDir).To(Equal("maascontroller"))
 	g.Expect(m.maasManifestInfo.SourcePath).To(Equal("base"))
+}
+
+func TestNewModuleXKS(t *testing.T) {
+	g := NewWithT(t)
+
+	cfg := &moduleconfig.Config{
+		PlatformType:    string(cluster.XKS),
+		PlatformVersion: "1.0.0",
+		ManifestsPath:   "/manifests",
+	}
+
+	m, err := NewModule(cfg)
+	g.Expect(err).NotTo(HaveOccurred())
+	g.Expect(m.maasManifestInfo.ContextDir).To(Equal("maascontroller"))
+	g.Expect(m.maasManifestInfo.SourcePath).To(Equal("overlays/xks"))
+	g.Expect(m.batchGatewayManifestInfo.SourcePath).To(Equal("base"))
 }
 
 func TestNewModuleInvalidVersion(t *testing.T) {
